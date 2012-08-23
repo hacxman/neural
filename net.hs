@@ -2,15 +2,23 @@ module Net where
 import Random
 import Data.Traversable
 
-sigmoid x = tanh x --if x < 0 then 0 else 1
+type    Neuron   = [Double] -> Double
+type    Layer    = [Neuron]
+type    Network  = [Layer]
+
+tanhSigmoid x = tanh x
+linearSigmoid x | x > 1.0 = 1.0
+linearSigmoid x | x < 0.0 = 0.0
+linearSigmoid x = x
+
+sigmoid = linearSigmoid
 
 neuron ws input = sigmoid $ sum $ map (\(w,i) -> w*i) (zip ws input)
 
 layer neurons input = map (\f -> f input) neurons
 
-inputs = [1.0..5.0]
-
--- layer has to be partially applied with neurons
+--network :: Layer -> [Double] -> [Double]
+---- layer has to be partially applied with neurons
 network layers input = foldl (\input layer -> layer input) input layers
 
 nestList []     _   = []
@@ -28,19 +36,17 @@ topoToLayerCfg topo = topoToLayerCfg' topo'
 
 layerCfgToNeuronCfg = map $ map $ flip replicate ()
 
-{-pllm (c:cfg) = pllm c
-
-traverseList cfg rands = foldl (foldl ) ([], []) cfg
-  where
-    (rs,rest) = splitAt (length ws) rands
-    mapInnermost ws = (map (\(w,r) -> r) $ zip ws rs, rest)
--}
+fromCfgToLayer   cfg = layer $ map neuron cfg
+fromCfgToNetwork cfg = network $ map fromCfgToLayer cfg
 
 main = do
 --  print $ nestList [2,3,1] ws
-  randomizedCfg <- traverse (traverse (traverse (\x -> randomIO :: IO Double))) cfg
-  print 3 -- $ map (neuron) randomizedCfg
+  --randomizedCfg <- traverse (traverse (traverse (\x -> randomIO :: IO Double))) cfg
+  let
+    randomizedCfg = [[[1],[1]],[[1,-1],[-1,1]],[[2,2]]]
+    net = fromCfgToNetwork randomizedCfg in
+    print $ map net [[x,y] | x <- [0,1], y <- [0,1]]
   where
     g   = mkStdGen 42
     ws  = randoms g :: [Double]
-    cfg = layerCfgToNeuronCfg $ topoToLayerCfg [2,3,2]
+    cfg = layerCfgToNeuronCfg $ topoToLayerCfg [2,2,1]
