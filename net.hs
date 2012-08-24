@@ -1,6 +1,8 @@
-module Net where
+module Main where
 import Random
 import Data.Traversable
+
+import Debug.Trace
 
 type    Neuron   = [Double] -> Double
 type    Layer    = [Neuron]
@@ -13,13 +15,20 @@ linearSigmoid x = x
 
 sigmoid = linearSigmoid
 
-neuron ws input = sigmoid $ sum $ map (\(w,i) -> w*i) (zip ws input)
+neuron ws input idx | length ws == length input = {-trace ("neuron input:" ++ show input ++ " ws:" ++ show ws ++ " output: " ++ show out) $-} out
+  where
+    out = sigmoid $ sum $ map (\(w,i) -> w*i) (zip ws input)
+neuron ws input idx {-| trace ("idx: " ++ show idx ++ " inp: " ++ show input ++ " ws: " ++ show ws) True -} = sigmoid ((input!!idx) * ws !! (0))
 
-layer neurons input = map (\f -> f input) neurons
+layer neurons input = {-trace ("layer input:" ++ show input ++ " out:" ++ show out) $-} out
+  where
+    out = map (\(f,idx) -> f input idx) (zip neurons [0..])
 
 --network :: Layer -> [Double] -> [Double]
 ---- layer has to be partially applied with neurons
-network layers input = foldl (\input layer -> layer input) input layers
+network layers input = {-trace ("network input:" ++ show input ++ " out:"++show out) $-} out
+  where
+    out = foldl (\input layer -> layer input) input layers
 
 nestList []     _   = []
 nestList (t:ts) lst = l : nestList ts ls
@@ -41,11 +50,15 @@ fromCfgToNetwork cfg = network $ map fromCfgToLayer cfg
 
 main = do
 --  print $ nestList [2,3,1] ws
-  --randomizedCfg <- traverse (traverse (traverse (\x -> randomIO :: IO Double))) cfg
+--  randomizedCfg <- traverse (traverse (traverse (\x -> randomIO :: IO Double))) cfg
   let
     randomizedCfg = [[[1],[1]],[[1,-1],[-1,1]],[[2,2]]]
-    net = fromCfgToNetwork randomizedCfg in
-    print $ map net [[x,y] | x <- [0,1], y <- [0,1]]
+    inputs = [[x,y] | x <- [0,1], y <- [0,1]]
+    net = fromCfgToNetwork randomizedCfg in do
+      print randomizedCfg
+      print cfg
+      print inputs
+      print  $ map net inputs
   where
     g   = mkStdGen 42
     ws  = randoms g :: [Double]
