@@ -1,8 +1,11 @@
 module Main where
 import Random
-import Data.Traversable
+import Data.Traversable hiding (forM)
+import Control.Monad
 
 import Debug.Trace
+
+import Genet
 
 type    Neuron   = [Double] -> Double
 type    Layer    = [Neuron]
@@ -41,25 +44,32 @@ topoToLayerCfg topo = topoToLayerCfg' topo'
   where
     topo' = 1 : topo
     topoToLayerCfg' (a:b:rest) = replicate b a : topoToLayerCfg' (b:rest)
-    topoToLayerCfg' (_ : [])   = []
+    topoToLayerCfg' (_:[])     = []
 
 layerCfgToNeuronCfg = map $ map $ flip replicate ()
 
 fromCfgToLayer   cfg = layer $ map neuron cfg
 fromCfgToNetwork cfg = network $ map fromCfgToLayer cfg
 
+matingF t1 t2 = map (\(a,b)
+                      -> map (\(u,v)
+                              -> map (\(x,y) -> x + (y-x)/2) $ zip u v) $ zip a b) $ zip t1 t2
+
 main = do
 --  print $ nestList [2,3,1] ws
---  randomizedCfg <- traverse (traverse (traverse (\x -> randomIO :: IO Double))) cfg
+  randomizedCfg <- forM [cfg | _<-[1..100]] (traverse (traverse (traverse (\_ -> randomIO >>= (\x -> return $ (1-x*2)) :: IO Double))))
+-- (traverse (traverse (traverse (\x -> randomIO :: IO Double))) cfg)
   let
-    randomizedCfg = [[[1],[1]],[[1,-1],[-1,1]],[[2,2]]]
+    --randomizedCfg = [[[1],[1]],[[1,-1],[-1,1]],[[2,2]]]
     inputs = [[x,y] | x <- [0,1], y <- [0,1]]
-    net = fromCfgToNetwork randomizedCfg in do
-      print randomizedCfg
-      print cfg
-      print inputs
-      print  $ map net inputs
+    referenceOutput = [[0],[1],[1],[0]] in do
+    --net = fromCfgToNetwork randomizedCfg in do
+--      print randomizedCfg
+--      print cfg
+--      print inputs
+      --print  $ map net inputs
+      print $ runGen matingF fromCfgToNetwork 0.0001 randomizedCfg inputs referenceOutput ws 0
   where
     g   = mkStdGen 42
     ws  = randoms g :: [Double]
-    cfg = layerCfgToNeuronCfg $ topoToLayerCfg [2,2,1]
+    cfg = layerCfgToNeuronCfg $ topoToLayerCfg [2,4,1]
