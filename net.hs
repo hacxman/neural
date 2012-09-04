@@ -53,7 +53,7 @@ fromCfgToNetwork cfg = network $ map fromCfgToLayer cfg
 
 matingF t1 t2 = map (\(a,b)
                       -> map (\(u,v)
-                              -> map (\(x,y) -> x + (y-x)/2) $ zip u v) $ zip a b) $ zip t1 t2
+                              -> map (\(x,y) -> x + (y-x)/200) $ zip u v) $ zip a b) $ zip t1 t2
 
 main = do
 --  print $ nestList [2,3,1] ws
@@ -61,6 +61,7 @@ main = do
 -- (traverse (traverse (traverse (\x -> randomIO :: IO Double))) cfg)
   let
     --randomizedCfg = [[[1],[1]],[[1,-1],[-1,1]],[[2,2]]]
+    trained = runGen matingF fromCfgToNetwork 0.0001 randomizedCfg inputs referenceOutput ws 0
     inputs = [[x,y] | x <- [0,1], y <- [0,1]]
     referenceOutput = [[0],[1],[1],[0]] in do
     --net = fromCfgToNetwork randomizedCfg in do
@@ -68,8 +69,12 @@ main = do
 --      print cfg
 --      print inputs
       --print  $ map net inputs
-      print $ runGen matingF fromCfgToNetwork 0.0001 randomizedCfg inputs referenceOutput ws 0
+      print $ trained
+      putStrLn "Testing on xor:"
+      print $ map (fromCfgToNetwork $ snd trained) inputs
   where
+
     g   = mkStdGen 42
     ws  = randoms g :: [Double]
-    cfg = layerCfgToNeuronCfg $ topoToLayerCfg [2,4,1]
+    cfg = layerCfgToNeuronCfg $ topoToLayerCfg [2,3,1]
+
