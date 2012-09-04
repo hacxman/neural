@@ -10,7 +10,7 @@ objectiveFun reference test = (**2) $ sum $ map (\(x,y) -> {-trace ("x:"++show (
 type Individuum = [[[Double]]]
 type Input      = [Double]
 type Output     = [Double]
-runPopulation :: (Individuum -> Input -> Output) 
+runPopulation :: (Individuum -> Input -> Output)
               -> [Input] -> [Individuum] -> [[Output]]
 runPopulation fn inputs population =
     map (\individual -> map (fn individual) inputs) population
@@ -29,8 +29,8 @@ mutateIndividuum individuum rands = level1 individuum rands
   where
     level3 items rnd = (zipWith (\x y -> x+(y*2-1)/10000.0) items $ take (length items) rnd
                        ,drop (length items) rnd)
-    level2 items rnd = foldl (\(i,rs) y -> let (x',y') = level3 y rs in (x':i,y')) ([], rnd) items
-    level1 items rnd = foldl (\(i,rs) y -> let (x',y') = level2 y rs in (x':i,y')) ([], rnd) items
+    level2 items rnd = foldl (\(i,rs) y -> let (x',y') = level3 y rs in (i++[x'],y')) ([], rnd) items
+    level1 items rnd = foldl (\(i,rs) y -> let (x',y') = level2 y rs in (i++[x'],y')) ([], rnd) items
 
 mutatePopulation population rands = foldl (\(i,rs) y -> let (x',y') = mutateIndividuum y rs in (x':i,y')) ([], rands) population
 
@@ -46,13 +46,13 @@ runGen matingF fn maxerror population inputs reference rands iii = let
   err  = fst (head sele)
   (mpop, nrands) = mutatePopulation npop rands
   in
-    if iii == 10 then error ("SELE:" ++ show sele ++ "\nTEST:" ++ show test)
-    else
+--    if iii == 10 then error ("SELE:" ++ show sele ++ "\nTEST:" ++ show test)
+--    else
       if err < maxerror
         then trace (show err) $ head sele
         else
-          trace "pllm:" $
+--          trace "pllm:" $
           trace (show err) $
-          trace ("sele:" ++ show sele) $
-          trace ("test:" ++ show test ++ "\n") $
+--          trace ("sele: " ++ show sele) $
+--          trace ("test: " ++ show test ++ "\n") $
           runGen matingF fn maxerror mpop inputs reference nrands (iii+1)
